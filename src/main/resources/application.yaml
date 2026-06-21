@@ -1,3 +1,66 @@
 spring:
   application:
     name: api-gateway
+
+  cloud:
+    gateway:
+      routes:
+        - id: techprocess-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/v1/techprocess-service/**
+          filters:
+            - name: StripPrefix
+              args:
+                parts: 0
+
+        - id: library-equipments
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/v1/library-service/equipments/**
+          filters:
+            - name: StripPrefix
+              args:
+                parts: 0
+
+        - id: library-materials
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/v1/library-service/materials/**
+          filters:
+            - name: StripPrefix
+              args:
+                parts: 0
+
+        - id: library-safety-instructions
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/v1/library-service/safety-instructions/**
+          filters:
+            - name: StripPrefix
+              args:
+                parts: 0
+
+        - id: notification-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/v1/notification-service/**
+          filters:
+            - name: StripPrefix
+              args:
+                parts: 0
+
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/techprocess-service-realm
+
+keycloak:
+  token-uri: http://localhost:8080/realms/techprocess-service-realm/protocol/openid-connect/token
+  client-id: api-gateway
+  client-secret: your-client-secret-here
+
+server:
+  port: 8083
