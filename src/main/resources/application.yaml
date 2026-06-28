@@ -1,45 +1,58 @@
+server:
+  port: 8083
+
 spring:
   application:
     name: api-gateway
+  config:
+    activate:
+      on-profile: docker
 
   cloud:
     gateway:
       routes:
         - id: techprocess-service
-          uri: http://localhost:8082
+          uri: http://techprocess-service:8082
           predicates:
             - Path=/api/v1/techprocess-service/**
+          filters:
+            - TokenRelay # Автоматически пересылает JWT дальше
 
         - id: library-equipments
-          uri: http://localhost:8081
+          uri: http://technical-library-service:8081
           predicates:
             - Path=/api/v1/library-service/equipments/**
+          filters:
+            - TokenRelay
 
         - id: library-materials
-          uri: http://localhost:8081
+          uri: http://technical-library-service:8081
           predicates:
             - Path=/api/v1/library-service/materials/**
+          filters:
+            - TokenRelay
 
         - id: library-safety-instructions
-          uri: http://localhost:8081
+          uri: http://technical-library-service:8081
           predicates:
             - Path=/api/v1/library-service/safety-instructions/**
+          filters:
+            - TokenRelay
 
         - id: notification-service
-          uri: http://localhost:8084
+          uri: http://notification-service:8084
           predicates:
             - Path=/api/v1/notification-service/**
+          filters:
+            - TokenRelay
 
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/realms/techprocess-service-realm
+          issuer-uri: http://keycloak:8080/realms/techprocess-service-realm
 
 keycloak:
-  token-uri: http://localhost:8080/realms/techprocess-service-realm/protocol/openid-connect/token
+  token-uri: http://keycloak:8080/realms/techprocess-service-realm/protocol/openid-connect/token
   client-id: api-gateway
-  client-secret: your-client-secret-here
-
-server:
-  port: 8083
+  client-secret: ${KEYCLOAK_CLIENT_SECRET:your-client-secret-here}
