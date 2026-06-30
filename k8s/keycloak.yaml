@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: techprocess
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: jboss/keycloak:latest
+          env:
+            - name: KEYCLOAK_USER
+              value: admin
+            - name: KEYCLOAK_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-secret
+                  key: admin-password
+            - name: DB_VENDOR
+              value: postgres
+            - name: DB_ADDR
+              value: postgres-keycloak
+            - name: DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-keycloak-secret
+                  key: db
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-keycloak-secret
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-keycloak-secret
+                  key: password
+          ports:
+            - containerPort: 8080
+              name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  namespace: techprocess
+spec:
+  selector:
+    app: keycloak
+  ports:
+    - port: 8080
+      targetPort: 8080
