@@ -166,6 +166,7 @@ services:
       KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/keycloak_db
       KC_DB_USERNAME: keycloak_user
       KC_DB_PASSWORD: keycloak_pass
+      KC_METRICS_ENABLED: "true"
     ports:
       - "8080:8080"
     command: start-dev
@@ -182,10 +183,56 @@ services:
       retries: 10
       start_period: 60s
 
+  eureka-server:
+    image: n1ruin/eureka-server:latest
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    volumes:
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - app-network
+    restart: unless-stopped
+
   api-gateway:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: n1ruin/api-gateway:latest
     container_name: api-gateway
     ports:
       - "8083:8083"
@@ -208,9 +255,7 @@ services:
     restart: unless-stopped
 
   notification-service:
-    build:
-      context: ../notification-service
-      dockerfile: Dockerfile
+    image: n1ruin/notification-service:latest
     container_name: notification-service
     ports:
       - "8084:8084"
@@ -233,9 +278,7 @@ services:
     restart: unless-stopped
 
   technical-library-service:
-    build:
-      context: ../technical-library-service
-      dockerfile: Dockerfile
+    image: n1ruin/technical-library-service:latest
     container_name: technical-library-service
     ports:
       - "8081:8081"
@@ -262,9 +305,7 @@ services:
     restart: unless-stopped
 
   techprocess-service:
-    build:
-      context: ../techprocess-service
-      dockerfile: Dockerfile
+    image: n1ruin/techprocess-service:latest
     container_name: techprocess-service
     ports:
       - "8082:8082"
@@ -287,9 +328,7 @@ services:
     restart: unless-stopped
 
   file-service:
-    build:
-      context: ../file-service
-      dockerfile: Dockerfile
+    image: n1ruin/file-service:latest
     container_name: file-service
     ports:
       - "8087:8087"
@@ -314,6 +353,20 @@ services:
       interval: 30s
       timeout: 3s
       retries: 3
+    restart: unless-stopped
+
+  config-server:
+    image: n1ruin/config-server:latest
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CLOUD_CONFIG_SERVER_GIT_URI: https://github.com/N1ruin/config-repo
+      SPRING_CLOUD_CONFIG_SERVER_GIT_SEARCHPATHS: '{application}'
+      SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL: main
+    networks:
+      - app-network
     restart: unless-stopped
 
 volumes:

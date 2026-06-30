@@ -1,58 +1,5 @@
-server:
-  port: 8083
-
 spring:
   application:
     name: api-gateway
   config:
-    activate:
-      on-profile: docker
-
-  cloud:
-    gateway:
-      routes:
-        - id: techprocess-service
-          uri: http://techprocess-service:8082
-          predicates:
-            - Path=/api/v1/techprocess-service/**
-          filters:
-            - TokenRelay # Автоматически пересылает JWT дальше
-
-        - id: library-equipments
-          uri: http://technical-library-service:8081
-          predicates:
-            - Path=/api/v1/library-service/equipments/**
-          filters:
-            - TokenRelay
-
-        - id: library-materials
-          uri: http://technical-library-service:8081
-          predicates:
-            - Path=/api/v1/library-service/materials/**
-          filters:
-            - TokenRelay
-
-        - id: library-safety-instructions
-          uri: http://technical-library-service:8081
-          predicates:
-            - Path=/api/v1/library-service/safety-instructions/**
-          filters:
-            - TokenRelay
-
-        - id: notification-service
-          uri: http://notification-service:8084
-          predicates:
-            - Path=/api/v1/notification-service/**
-          filters:
-            - TokenRelay
-
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://keycloak:8080/realms/techprocess-service-realm
-
-keycloak:
-  token-uri: http://keycloak:8080/realms/techprocess-service-realm/protocol/openid-connect/token
-  client-id: api-gateway
-  client-secret: ${KEYCLOAK_CLIENT_SECRET:your-client-secret-here}
+    import: optional:configserver:http://config-server:8888
